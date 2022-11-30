@@ -1,34 +1,67 @@
 import pandas as pd
 import random
+import time
 from flask import render_template, request, redirect, jsonify
 from components import app
-from components.functions import * 
+from components.ml.src.Bradley import *
+# from components.ml.src.helper_methods import init_agent
+from components.controller import * 
 from components.chess_model import *
 
 # chess_data = pd.read_pickle('components/kaggle_chess_data.pkl', compression = 'zip')
 
+q_table_path = r"D:\Users\Lom\Documents\Github\Capstone Project\White_Q_table_100_games.pkl"
+chess_data_path = r"D:\Users\Lom\Documents\Github\Capstone Project\kaggle_chess_data.pkl"
 
+# read pkl file that contains the dataframe.
+big_chess_DB = pd.read_pickle(chess_data_path, compression = 'zip')
+chess_data = big_chess_DB.sample(100_000)
+
+# player = init_agent(chess_data)
+#player = Bradley(chess_data, 'W')
+
+# load the agent with a previously trained agent's Q table
+# don't train an agent when a user want to play the game, very time-consuming
+#player.rl_agent.Q_table = pd.read_pickle(q_table_path, compression = 'zip') # pikl files load faster and the formatting is cleaner
+#player.rl_agent.is_trained = True # set this to trained since we assigned a preexisting Q table to new RL agent
 
 @app.route("/")
 def index():
-    return {"DC Trinity": ["Superman", "Batman", "Wonderwoman"]}
+    return {"DC_Trinity": ["Superman", "Batman", "Wonderwoman"]}
 
 @app.route("/startgame")
 def startgame():
-    player = PlayerHands()
+    # player = PlayerHands()
+
+
+    # player = init_agent(chess_data)
+    player = Bradley(chess_data, 'W')
+
+    # load the agent with a previously trained agent's Q table
+    # don't train an agent when a user want to play the game, very time-consuming
+    player.rl_agent.Q_table = pd.read_pickle(q_table_path, compression = 'zip') # pikl files load faster and the formatting is cleaner
+    player.rl_agent.is_trained = True # set this to trained since we assigned a preexisting Q table to new RL agent
+
     global controller
     controller = StartGame(player)
     # controller = PlayerHands(board)
     # controller.start_game(board)
     # legal_moves = controller.boardState.load_legal_moves_list()
-    legal_moves = load_legal_moves_list(controller.board)
+    # legal_moves = load_legal_moves_list(controller.board)
+    chess_move = controller.player.rl_agent_chess_move()
+    chess_move_str = chess_move['chess_move_str']
+    chess_move_src = chess_move['move_source']
+    legal_moves = controller.player.get_legal_moves()
+    fen_string = controller.player.get_fen_str()
     # player_turn = controller.play.playerTurnMessage()
     return {
             "legal_moves": legal_moves,
             # "player_turn": player_turn,
             "gameStarted": True,
-            "best_move": random.choice(legal_moves),
-            "ascii": str(controller.board)
+            # "best_move": random.choice(legal_moves),
+            "fen_string": fen_string,
+            "best_move": chess_move_str,
+            "ascii": str(controller.player.get_chessboard())
             }
 
 @app.route("/endgame")
@@ -36,27 +69,41 @@ def endgame():
     return {"legal_moves": [],
             "player_turn": "Players has ended the game early",
             "gameStarted": False,
-            "ascii": str(controller.board)
+            "ascii": str(controller.player.get_chessboard())
             }
 
 @app.route("/getmoves")
 def getmoves():
-    legal_moves = load_legal_moves_list(controller.board)
+    # legal_moves = load_legal_moves_list(controller.board)
+    chess_move = controller.player.rl_agent_chess_move()
+    chess_move_str = chess_move['chess_move_str']
+    # chess_move_str = controller.agentmove['chess_move_str']
+    # chess_move_src = chess_move['move_source']
+    legal_moves = controller.player.get_legal_moves()
+    fen_string = controller.player.get_fen_str()
     # player_turn = controller.play.playerTurnMessage()
     return {"legal_moves": legal_moves,
             # "player_turn": player_turn,
-            "best_move": random.choice(legal_moves),
-            "ascii": str(controller.board)
+            "best_move": chess_move_str,
+            "fen_string": fen_string,
+            "ascii": str(controller.player.get_chessboard())
             }
+
+@app.route("/moveagent", methods=['GET', 'POST'])
+def moveagent():
+    if request.method == 'POST':
+        controller.agentmove = controller.player.rl_agent_chess_move()
+        return "Success"
 
 @app.route("/movewhite", methods=['GET','POST'])
 def movewhite():
     if request.method == 'POST':
         move = request.json
         # controller.playerInput(move)
-        controller.board.push_san(move)
+        # controller.board.push_san(move)
+
         print(move)
-        print(controller.board)
+        # print(controller.board)
         return "Success"
 
 @app.route("/moveblack", methods=['GET','POST'])
@@ -64,9 +111,9 @@ def moveblack():
     if request.method == 'POST':
         move = request.json
         # controller.playerInput(move)
-        controller.board.push_san(move)
+        controller.player.recv_opp_move(move)
         print(move)
-        print(controller.board)
+        # print(controller.board)
         return "Success"
 
 # @app.route("/movewhite", methods=['GET','POST'])

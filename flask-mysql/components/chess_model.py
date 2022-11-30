@@ -1,4 +1,5 @@
 import chess
+from components.ml.src.Bradley import *
 
 # class BoardState:
 #     def __init__(self):
@@ -93,20 +94,20 @@ def load_legal_moves_list(board):
             
     return legal_moves_str
 
-class StartGame:
-    def __init__(self, playerHands):
-        self.stop = False
-        self.play = playerHands
-        self.board = chess.Board()
+# class StartGame:
+#     def __init__(self, playerHands):
+#         self.stop = False
+#         self.play = playerHands
+#         self.board = chess.Board()
 
-    def endGame(self):
-        self.stop = not self.stop
+#     def endGame(self):
+#         self.stop = not self.stop
 
     
-    def checkStatus(self, playerHands, boardState):
-        chess_move = playerHands.currentMove
-        if chess_move == 'q':
-            self.endGame
+#     def checkStatus(self, playerHands, boardState):
+#         chess_move = playerHands.currentMove
+#         if chess_move == 'q':
+#             self.endGame
         # while not boardState.board.is_game_over():
         #     if self.currentMove == 'q': break
 
@@ -117,3 +118,19 @@ class StartGame:
         #         continue
             
         #     boardState.switch_player()
+
+class StartGame:
+    def __init__(self, player):
+        self.stop = False
+        self.player = player
+        self.agentmove = pd.DataFrame()
+        # self.board = chess.Board()
+
+    def endGame(self):
+        self.stop = not self.stop
+
+    
+    def checkStatus(self, player, boardState):
+        chess_move = player.currentMove
+        if chess_move == 'q':
+            self.endGame
