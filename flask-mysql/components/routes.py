@@ -5,7 +5,7 @@ from flask import render_template, request, redirect, jsonify
 from components import app
 from components.ml.src.Bradley import *
 # from components.ml.src.helper_methods import init_agent
-from components.controller import * 
+# from components.controller import * 
 from components.chess_model import *
 
 # chess_data = pd.read_pickle('components/kaggle_chess_data.pkl', compression = 'zip')
