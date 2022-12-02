@@ -1,5 +1,5 @@
 import chess
-from components.ml.src.Bradley import *
+from components.ml.Bradley import *
 
 # class BoardState:
 #     def __init__(self):
